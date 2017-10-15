@@ -176,7 +176,7 @@ sky_dir2=sky_dir ;clobber old files by using same directory as before
 ;if ~file_test(skydir2) then spawn, 'mkdir '+sky_dir2 ;^no need to make new directory, let's save space
 if keyword_set(skip_apply_illum) then skip_apply_illum=1 else $
    skip_apply_illum=0
-;sky_subtract,outdir,sky_dir2,/mask,skip_illum=skip_apply_illum ;-->writes new files to 'skysub/' (clobers old)
+sky_subtract,outdir,sky_dir2,/mask,skip_illum=skip_apply_illum ;-->writes new files to 'skysub/' (clobers old)
 
 
 ;//////////////// [[ Step 9 ]] Do aperture photometry on target
