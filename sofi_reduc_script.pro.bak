@@ -6,11 +6,11 @@ pro sofi_reduc_script,indir,outdir,tname=tname,skip_xtalk=skip_xtalk,skip_flat=s
 ;     Perform a basic reduction of Js band SoFI time-series data from
 ;     the BAM survey (Wilson et al. 2014) as found in the re-analysis
 ;     by Radigan et al. 2014, including:
-;        -xtalk correction
+;        -xtalk correction 
 ;        -sky subtraction (also removes dark current and bias)
 ;        -flat fielding
 ;        -illumination correction
-;        -point source identification
+;        -point source identification  
 ;        -aperture photometry
 ;
 ;     By default all steps are performed, but individual steps can be
@@ -29,26 +29,21 @@ pro sofi_reduc_script,indir,outdir,tname=tname,skip_xtalk=skip_xtalk,skip_flat=s
 ;     and an empty <outdir> directory should be created.  The script
 ;     takes <indir> and <outdir> as arguments. Calibration files for
 ;     the special dome flats and illumination correction should be
-;     placed in <indir>/flats/ and <indir>/illum/ before beginning.
+;     placed in <indir>/flats/ and <indir>/illum/ before beginning.  
 ;
 ;     It is recommended to run this code from the folder containing
-;     <outdir> and <indir>.
+;     <outdir> and <indir>. 
 ;     Reduced products and auxillary files are created in <outdir>.
 ;
 ;     WARNING: if <outdir> is not empty, old files will be clobbered.
-;
+;     
 ;     Explanations of the reduction procedures can be found in the
 ;     following documents or web resources:
 ;
-;     SoFI manual: 
-;     http://www.eso.org/sci/facilities/lasilla/instruments/sofi/doc.html
-;
-;     xtalk correction: 
-;     http://www.eso.org/~gfinger/hawaii_1Kx1K/crosstalk_rock/crosstalk.html
-;     https://www.eso.org/sci/facilities/lasilla/instruments/sofi/tools/reduction/sofi_scripts/crosstalk.cl
-;
-;     special dome flat fields and illumination correction: 
-;     http://www.eso.org/sci/facilities/lasilla/instruments/sofi/tools/reduction/flat_fielding.html
+;     SoFI manual:
+;     xtalk correction:
+;     special dome flat fields: 
+;     illumination correction:
 ;
 ; CALLING SEQUENCE
 ;     sofi_reduc_script,indir,outdir,skip_xtalk=skip_xtalk,skip_skysub=skip_skysub,skip_flat=skip_flat,skip_illum=skip_illum,manual_src_pos=manual_src_pos
@@ -61,7 +56,7 @@ pro sofi_reduc_script,indir,outdir,tname=tname,skip_xtalk=skip_xtalk,skip_flat=s
 ;    This script creates .fits files with photometric data. Example
 ;    .eps files of the time series are also produced, but figures
 ;    may require user-modification on a case-by-case basis.
-;
+;   
 ; OPTIONAL INPUT PARAMETERS:
 ;   tname - string to label target in plots
 ;   rms_cut - use only reference stars with rms < rms_cut * rms_target
@@ -72,54 +67,27 @@ pro sofi_reduc_script,indir,outdir,tname=tname,skip_xtalk=skip_xtalk,skip_flat=s
 ;         calibration curve (may be appropriate when N_refs is small)
 ;   only_phot - set keyword to skip reduction and just do aperture
 ;               photometry
-;
+;   
 ;   skip_<reduction_step> - set to skip particular reduction step (see
 ;                           calling sequence).  Provides ability to
 ;                           redo main reduction without having to redo
-;                           xtalk correction, and prepare calibration files.
-;
+;                           xtalk correction, and prepare calibration files. 
+;                       
 ;  skip_apply_illuim - skip the application of the illumination
 ;                      correction
 ;  aperture - photometry aperture in units of pixels x 1.5
 ;  allow_src - reference star index-->overrides the fwhm clipping
 ;              (useful if the only bright references are somewhat
-;              extended)
-;
-;
+;              extended) 
+; 
+;                    
 ; DEPENDENCIES:
-;    IDL Astronomy User's Library (not included)
-;    Markwardt Library cmtotal (not included)
-;
-;    Packaged
-;    by JR:
-;     define_references.pro
-;     do_phot.pro
-;     flat_field.pro
-;     get_target_positions.pro
-;     grab_im_coords.pro
-;     illum_cor.pro
-;     mk_cube.pro
-;     obslog.pro
-;     ones.pro
-;     remove_xtalk.pro
-;     sky_info.pro
-;     sky_subtract.pro
-;     split_sets.pro
-;     xtalk.pro
-;
-;    by D. Lafreniere:
-;     subarr.pro (D. Lafreniere)
-;     tvdl (D. Lafreniere)
-;     load8colors (D. Lafreniere)
-;     medfits.pro (D. Lafreniere)
-;     filelist.pro (D. Lafreniere)
-;     nbrlist.pro (D. Lafreniere)
-;
-;    by Other:
-;     esosxpar.pro
-;     trim.pro
-;     writecol.pro
-;
+;    IDL Astronomy User's Library
+;    grab_im_coords.pro
+;    obslog.pro
+;    remove_xtalk.pro
+;    writecol.pro   
+;    xtalk.pro  
 ;
 ; REVISION HISTORY:
 ;
@@ -136,10 +104,19 @@ if keyword_set(only_phot) then goto, only_phot
 ;//////////////// [[ Step 1 ]] Apply xtalk correction to all files
 xtalk_dir=outdir+'/xtalk'
 if ~keyword_set(skip_xtalk) then begin
-   if ~file_test(xtalk_dir) then spawn, 'mkdir '+xtalk_dir
-   remove_xtalk,indir,xtalk_dir
+   if ~file_test(xtalk_dir) then begin
+      spawn, 'mkdir '+xtalk_dir
+      remove_xtalk,indir,xtalk_dir
+   endif
+   ;if ~file_test(flat_dir+'/xtalk') and ~keyword_set(skip_flat) then begin
+   ;   spawn, 'mkdir '+flat_dir+'/xtalk'
+   ;   remove_xtalk,flat_dir,flat_dir+'/xtalk'
+   ;endif
+   ;if ~file_test(illum_dir+'/xtalk') and ~keyword_set(skip_illum) then begin
+   ;   spawn, 'mkdir '+illum_dir+'/xtalk'
+   ;   remove_xtalk,illum_dir,illum_dir+'/xtalk'
+   ;endif
 endif 
-
 
 ;//////////////// [[ Step 2 ]] Reduce special dome flats
 if ~keyword_set(skip_flat) then flat_field,flat_dir,outdir ;-->writes mflat.fits
@@ -148,7 +125,6 @@ if ~keyword_set(skip_flat) then flat_field,flat_dir,outdir ;-->writes mflat.fits
 ;//////////////// [[ Step 3 ]] Calculate illumination correction
 if ~keyword_set(skip_illum) then illum_cor,illum_dir,outdir ;-->writes illum_cor.sav
 
-if 1 then begin
 ;//////////////// [[ Step 3 ]] Create a log of xtalk corrected input files
 obs_log,xtalk_dir,outdir ;--->writes obslog.txt
 
@@ -164,7 +140,7 @@ sky_info,outdir,d_thr=d_thr,i_thr=i_thr,t_thr=t_thr;--->outputs 'sky_info.sav'
 ;after sky subtraction within the sky_subtract procedure. 
 if ~file_test(sky_dir) then spawn, 'mkdir '+sky_dir
 sky_subtract,outdir,sky_dir,skip_illum=skip_apply_illum ;-->writes files to 'skysub/'
-endif 
+
 ;//////////////// [[ Step 7 ]] Get positions of target and reference
 ;stars in sky subtracted images
 define_references,outdir,ref_frame=0 ;-->outputs a bunch of useful .sav files indicating 
@@ -176,7 +152,7 @@ sky_dir2=sky_dir ;clobber old files by using same directory as before
 ;if ~file_test(skydir2) then spawn, 'mkdir '+sky_dir2 ;^no need to make new directory, let's save space
 if keyword_set(skip_apply_illum) then skip_apply_illum=1 else $
    skip_apply_illum=0
-;sky_subtract,outdir,sky_dir2,/mask,skip_illum=skip_apply_illum ;-->writes new files to 'skysub/' (clobers old)
+sky_subtract,outdir,sky_dir2,/mask,skip_illum=skip_apply_illum ;-->writes new files to 'skysub/' (clobers old)
 
 
 ;//////////////// [[ Step 9 ]] Do aperture photometry on target
@@ -194,18 +170,18 @@ do_phot,outdir,sky_dir,aperture_type=aperture_type,aperture_size=aperture_size,a
 
 ;Test array of aperture sizes-->output ap_array_<tname>.log
 ;---uncomment below if desired
-test_apertures=1
-aps=[2,2.5,3,3.5,4,4.5,5,5.5,6,6.5,7,7.5,8]
-nap=n_elements(aps)
-mean_rms=fltarr(nap)
-logname=outdir+'/ap_array_'+tname+'.log'
-openw,lun,logname,/get_lun
-printf,lun,'Log of reference star RMS as a function of aperture size (x1.5 pixels) '
-for i=0,nap-1 do begin
-   do_phot,outdir,sky_dir,aperture_type=aperture_type,aperture_size=aps[i],aperture_array=aperture_array,sky_annulus=sky_annulus,cntrd_type=0,tname=tname,rms_cut=rms_cut,mskip=mskip,avg=avg,return_ref_rms=return_ref_rms,allow_src=allow_src,test_apertures=1
-  printf,lun,'Aperture: '+trim(aps[i])+'    Mean RMS: '+trim(mean(return_ref_rms.rms),'(f6.4)')
-   printf,lun,trim(return_ref_rms.refs)+' '
-   printf,lun,trim(return_ref_rms.rms,'(f6.4)') 
-endfor  
-free_lun,lun
+;test_apertures=1
+;aps=[2,3,4,5,6,7,8]
+;nap=n_elements(aps)
+;mean_rms=fltarr(nap)
+;logname=outdir+'/ap_array_'+tname+'.log'
+;openw,lun,logname,/get_lun
+;printf,lun,'Log of reference star RMS as a function of aperture size (x1.5 pixels) '
+;for i=0,nap-1 do begin
+;   do_phot,outdir,sky_dir,aperture_type=aperture_type,aperture_size=aps[i],aperture_array=aperture_array,sky_annulus=sky_annulus,cntrd_type=0,tname=tname,rms_cut=rms_cut,mskip=mskip,avg=avg,return_ref_rms=return_ref_rms,allow_src=allow_src
+;   printf,lun,'Aperture: '+trim(aps[i])+'    Mean RMS: '+trim(mean(return_ref_rms.rms),'(f6.4)')
+;   printf,lun,trim(return_ref_rms.refs)+' '
+;   printf,lun,trim(return_ref_rms.rms,'(f6.4)') 
+;endfor  
+;free_lun,lun
 end 
