@@ -21,5 +21,5 @@ endfor
 
 ;sort files according to MJD and write to log file called obslog.txt
 ind=sort(t)
-writecol,outdir+'/obslog.txt',obstype[ind],replicate('   ',n),utdate[ind],t[ind],replicate('  ',n),filt[ind],texp[ind],replicate('   ',n),f,format='(a,a,a,d,a,a,f,a,a)'
+writecol,outdir+'/obslog.txt',obstype[ind],replicate('   ',n),utdate[ind],replicate('   ',n),t[ind],replicate('  ',n),filt[ind],replicate('   ',n),texp[ind],replicate('   ',n),f,format='(a,a,a,a,d,a,a,a,f,a,a)'
 end

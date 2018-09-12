@@ -7,11 +7,13 @@ pro flat_field,flat_dir,outdir
 ;dS = AM-A = difference in shade between masked and non-masked flat
 ;S = SM - dS = shade pattern in non-masked flat
 
-f=file_search(flat_dir+'/*_xtalk.fits')
+;f=file_search(flat_dir+'/*_xtalk.fits')
+f=file_search(flat_dir+'/*.fits')
 a=mk_cube(f)
 
 ;remove xtalk for each file
 alpha=1.4d-5
+nf=n_elements(f)
 for i=0,nf-1 do begin
   im=a[*,*,i]
   xtalk,im,alpha

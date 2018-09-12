@@ -127,7 +127,7 @@ pro sofi_reduc_script,indir,outdir,tname=tname,skip_xtalk=skip_xtalk,skip_flat=s
 ;-
 
 
-flat_dir=indir+'/flats'
+flat_dir=indir+'/flats/'
 illum_dir=indir+'/illum'
 sky_dir=outdir+'/skysub'
 
@@ -140,10 +140,8 @@ if ~keyword_set(skip_xtalk) then begin
    remove_xtalk,indir,xtalk_dir
 endif 
 
-
 ;//////////////// [[ Step 2 ]] Reduce special dome flats
 if ~keyword_set(skip_flat) then flat_field,flat_dir,outdir ;-->writes mflat.fits
-
 
 ;//////////////// [[ Step 3 ]] Calculate illumination correction
 if ~keyword_set(skip_illum) then illum_cor,illum_dir,outdir ;-->writes illum_cor.sav
@@ -151,6 +149,7 @@ if ~keyword_set(skip_illum) then illum_cor,illum_dir,outdir ;-->writes illum_cor
 if 1 then begin
 ;//////////////// [[ Step 3 ]] Create a log of xtalk corrected input files
 obs_log,xtalk_dir,outdir ;--->writes obslog.txt
+
 
 ;//////////////// [[ Step 4 ]] Find preliminary target position in all slices
 get_target_positions,outdir ;--->creates tpos.txt

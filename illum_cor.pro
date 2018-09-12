@@ -1,7 +1,7 @@
 pro illum_cor,illum_dir,outdir
 
 ;read in illumination correction files
-files=file_search(illum_dir+'/*_xtalk.fits')
+files=file_search(illum_dir+'/*.fits')
 nf=n_elements(files)
 
 ;extract times from headers
@@ -66,9 +66,12 @@ for k=0,nparts-1 do begin
                                 ;instead of subtracting a
                                 ;median-combined sky, it is actually
                                 ;better just to subtract adjacent images. 
-  ; for i=0,nf-1 do grid[*,*,i]=(grid[*,*,i]-(msky*illum_level[i]))/mflat
+                                ; for i=0,nf-1 do
+                                ; grid[*,*,i]=(grid[*,*,i]-(msky*illum_level[i]))/mflat
+   tmp = grid[*,*,nf-2]
    for i=0,nf-2 do grid[*,*,i]=(grid[*,*,i]-(grid[*,*,i+1]))/mflat
-   grid[*,*,nf-1]=(grid[*,*,nf-1]-(grid[*,*,nf-2]))/mflat
+   grid[*,*,nf-1]=(grid[*,*,nf-1]-(tmp))/mflat
+   
 
 ;get standard position in image
   ; Field too crowded for point-and-click. 
@@ -94,7 +97,7 @@ for k=0,nparts-1 do begin
    xx[4:7]=reverse(xvec)
    xx[8:11]=xvec
    xx[12:15]=reverse(xvec)
-
+   
    ;refine positions and measure flux
    ;To-do: centroiding for Run-2 on out-of-focus stars could be improved,
    ;but in practive this doesn't matter much since we are using a large
@@ -106,12 +109,14 @@ for k=0,nparts-1 do begin
       x0=xx[i]
       y0=yy[i]
       im=grid[*,*,i]
-      box=21
+      ;box=21
+      box=25
       subim=subarr(im,box,round([x0,y0]))
       cntrd,subim,box/2,box/2,xxx,yyy,10
       xtmp1=round(x0)-box/2+xxx+0.5
       ytmp1=round(y0)-box/2+yyy+0.5
-      
+      tvdl,subim,/med
+      ;stop
       box=21
       subim=subarr(im,box,round([xtmp1,ytmp1]))
       guess=[0,500.,3.,3.,box/2,box/2,0]
@@ -119,16 +124,24 @@ for k=0,nparts-1 do begin
       xtmp=round(xtmp1)-box/2+pars0[4]+0.5
       ytmp=round(ytmp1)-box/2+pars0[5]+0.5
       tvdl,subim,/med
+      ;stop
+      
       box=11
       pars0[[4,5]]=[box/2,box/2]
       subim=subarr(im,box,round([xtmp,ytmp]))
       g=mpfit2dpeak(subim,pars,estimates=pars0,/tilt)
       tvdl,subim,/med
-   
+      ;stop
+      
       xx[i]=round(xtmp)-box/2+pars[4]+0.5
       yy[i]=round(ytmp)-box/2+pars[5]+0.5
+      loadct,1
+      plotimage,im,range=[-20,500]
+      oplot,[xx[i]],[yy[i]],psym=4,col=200,thick=2
+      ;stop
+      
       fwhm[i,*]=pars[2:3] 
-      apr=15.     ;set this =10 for run 1 where STD star is in-focus and field is crowded, =15 for run 2.
+      apr=10.     ;set this =10 for run 1 where STD star is in-focus and field is crowded, =15 for run 2.
       skyrad=[21,31]  
       aper,im,xx[i]-0.5,yy[i]-0.5,flux0,errap,sky,skyerr,5.4,apr,skyrad,badpix,/FLUX,/SILENT,/EXACT,/NAN
       flux[i]=flux0
@@ -146,7 +159,7 @@ endfor
 ;plot fluxes to check consistency
 for i=0,nparts-1 do begin
    if i eq 0 then plot,fluxes[*,i]/median(fluxes[*,i]),yr=[0.8,1.2] else $
-      oplot,fluxes[*,i]/median(fluxes[*,i]),col=i+1
+      oplot,fluxes[*,i]/median(fluxes[*,i])
 endfor
 stop
 
@@ -154,7 +167,7 @@ stop
 ;Of the 6 repeats, the fluxes from set #0,1 do no match, so we will discard these (run 2)
 
 ind=indgen(nparts)
-remove,[2,4],ind ;(run 1)
+;remove,[2,4],ind ;(run 1)
 ;remove,[0,1],ind ;(run 2)
 fluxes=fluxes[*,ind]
 zsurf=zsurf[*,*,ind]

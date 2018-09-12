@@ -267,7 +267,7 @@ ind=indgen(nparts)
 bad=where(len lt 5,nbad) ;ignore epochs with <5 points (sometimes 
 ;there is a final epoch with only a couple of images, likely the 
 ;dither pattern was interrupted to finish the observation) 
-remove,bad,ind
+if nbad gt 0 then remove,bad,ind
 if nbad gt 0 then begin
    bintimes=bintimes[ind]
    binflux=binflux[ind,*]
@@ -317,18 +317,19 @@ if keyword_set(test_apertures) then return
 ;-----------------------Plotting------------------------------
 ;May require user modification
 ;To do: clean this up!
+load8colors
 
 ;Make an unbinned plot of target and 1st good reference
-plot,t,fcal[0,*,aperture_plot_index],psym=4,yr=[0.9,1.1],xtit='Time (hr)',ytit='Rel. Flux',chars=1.5
+plot,t,fcal[0,*,aperture_plot_index],psym=4,yr=[0.9,1.1],xtit='Time (hr)',ytit='Rel. Flux',chars=1
 oplot,[-100,100],[1,1]
 oplot,[-100,100],[1,1]
 oplot,t,fcal[goodrefs[0],*,aperture_plot_index],psym=4,col=2
-xyouts,0.1,1.09,'Target star',chars=1.5
-xyouts,0.1,1.08,'Ref star',col=2,chars=1.5
+xyouts,0.1,1.09,'Target star',chars=1
+xyouts,0.1,1.08,'Ref star',col=2,chars=1
 stop
 
 ;make binned plots of target and all good references
-ploterror,bintimes,binflux[*,0]/mean(binflux[*,0]),psym=4,binflux_err[*,0],yr=[0.94,1.08],xtit='Time (hr)',ytit='Rel. Flux',chars=1.5,/ys,thick=3
+ploterror,bintimes,binflux[*,0]/mean(binflux[*,0]),psym=4,binflux_err[*,0],yr=[0.94,1.08],xtit='Time (hr)',ytit='Rel. Flux',chars=1,/ys,thick=3
 oploterror,bintimes,binflux[*,0]/mean(binflux[*,0]),binflux_err[*,0],psym=4,thick=3
 oploterror,bintimes,binflux[*,0]/mean(binflux[*,0]),binflux_err[*,0],psym=0,thick=3
 oplot,[-100,100],[1,1]
@@ -339,9 +340,9 @@ for i=0,ng-1 do begin
    oploterror,bintimes,binflux[*,goodrefs[i]]/mean(binflux[*,goodrefs[i]]),binflux_err[*,goodrefs[i]],psym=0,col=i+2,errcol=i+2
 endfor
 
-xyouts,0.1,1.07,'Target Time Series',chars=1.5
-maxmin=max(binflux[*,0])-min(binflux[*,0])
-xyouts,0.1,1.06,'MAX-MIN = '+trim(maxmin),chars=1.5
+xyouts,0.1,1.07,'Target Time Series',chars=1
+maxmin0=max(binflux[*,0])-min(binflux[*,0])
+xyouts,0.1,1.06,'MAX-MIN = '+trim(maxmin0),chars=1
 cols=['red','blue','green','yellow','cyan','purple','orange', 'rose', 'ltgreen','pink',replicate('',21)]
 xyouts,0.1,1.05,'Ref IDs:',chars=1.35
 str=''
@@ -359,19 +360,20 @@ plotsym,0,0.4,/fill
 !p.thick=2
 xtickname=replicate(' ',20)
 xtitle=''
-xmarg=[7.5,1]
+xmarg=[10.5,1]
 ymarg=[0.1,0.5]
 ysize=2.7
 filename=dir+'/targ.eps'
 mypsplot,file=filename,xsize=8,ysize=ysize,font=1,xmarg=xmarg,ymarg=ymarg
 
 mednorm=median(fcal[0,*,aperture_plot_index])
-plot,t,fcal[0,*,aperture_plot_index]/mednorm,psym=8,yr=[0.94,1.06],xtit=xtitle,ytit='Rel. Flux',chars=0.8,xr=[0,max(t)*1.05],/xs,xtickname=xtickname
- oplot,[-100,100],[1,1]
+plot,t,fcal[0,*,aperture_plot_index]/mednorm,psym=8,yr=[0.94,1.06],xtit=xtitle,ytit='',chars=0.45,xr=[0,max(t)*1.05],/xs,xtickname=xtickname
+xyouts,-0.25,0.96, 'Rel. Flux',orient=90,chars=0.45
+oplot,[-100,100],[1,1]
 plotsym,8,0.9,thick=3,/fill
 oploterror,bintimes,binflux[*,0]/mednorm,binflux_err[*,0],psym=8,thick=3,col=3,errcol=3
-xyouts,0.18,0.83,tname,/norm,chars=0.7
-xyouts,0.7,0.83,'MAX-MIN='+trim(maxmin[0],'(f5.3)'),/norm,chars=0.7,col=2
+xyouts,0.18,0.83,tname,/norm,chars=0.45
+xyouts,0.7,0.83,'MAX-MIN='+trim(maxmin[0],'(f5.3)'),/norm,chars=0.45,col=2
 mypsplot,file=filename,/close
 nrefs=n_elements(goodrefs)
 ymarg=[0.1,0.5]
@@ -395,12 +397,12 @@ for i=0,nrefs-1 do begin
    filename=dir+'/ref_'+trim(i)+'_'+trim(goodrefs[i])+'.eps'
    mypsplot,file=filename,xsize=8,ysize=ysize,font=1,ymarg=ymarg,xmarg=xmarg
    mednorm=median(fcal[goodrefs[i],*,aperture_plot_index])
-   plot,t,fcal[goodrefs[i],*,aperture_plot_index]/mednorm,psym=8,yr=[0.94,1.06],xtit=xtitle,ytit='Rel. Flux',chars=0.8,xr=[0,max(t)*1.05],/xs,xtickname=xtickname
+   plot,t,fcal[goodrefs[i],*,aperture_plot_index]/mednorm,psym=8,yr=[0.94,1.06],xtit=xtitle,ytit='Rel. Flux',chars=0.45,xr=[0,max(t)*1.05],/xs,xtickname=xtickname
    oplot,[-100,100],[1,1]
    plotsym,8,0.9,/fill
    oploterror,bintimes,binflux[*,goodrefs[i]]/mednorm,binflux_err[*,goodrefs[i]],psym=8,col=2,errcol=2
-   xyouts,0.18,ytext,'Ref star #'+trim(goodrefs[i]),/norm,chars=0.7
-   xyouts,0.7,ytext,'MAX-MIN='+trim(maxmin[goodrefs[i]],'(f5.3)'),/norm,chars=0.7,col=2
+   xyouts,0.18,ytext,'Ref star #'+trim(goodrefs[i]),/norm,chars=0.45
+   xyouts,0.7,ytext,'MAX-MIN='+trim(maxmin[goodrefs[i]],'(f5.3)'),/norm,chars=0.45,col=2
    mypsplot,file=filename,/close
 endfor
 
@@ -409,48 +411,51 @@ filename=dir+'/diag.eps'
 plotsym,0,0.3,/fill
 xmarg=[7,7]
 mypsplot,file=filename,xsize=9.,ysize=ysize,font=1,xmarg=xmarg,ymarg=ymarg
-plot,t,fwmed,psym=8,xtitle='Time [hr]',/nodata,chars=0.7,ys=5,yr=[0,10]
+plot,t,fwmed,psym=8,xtitle='Time [hr]',/nodata,chars=0.45,ys=5,yr=[0,10]
 oplot,t,fwmed,psym=8,col=3
-axis,yaxis=0,chars=0.7,ytitle='FWHM',col=3,yr=[0,10]
-plot,t,cal[0,*,aperture_plot_index],psym=8,/noerase,xs=0,ys=5,xtitle='  ',ytickname=replicate(' ',20),chars=0.7,/nodata,yr=[0.2,1.2]
+axis,yaxis=0,chars=0.45,ytitle='FWHM',col=3,yr=[0,10]
+plot,t,cal[0,*,aperture_plot_index],psym=8,/noerase,xs=0,ys=5,xtitle='  ',ytickname=replicate(' ',20),chars=0.45,/nodata,yr=[0.2,1.2]
 oplot,t,cal[0,*,aperture_plot_index],psym=8,col=8
-axis,yaxis=1,chars=0.7,ytitle='Global trend',col=8,yr=[0.2,1.2]
+axis,yaxis=1,chars=0.45,ytitle='Global trend',col=8,yr=[0.2,1.2]
 mypsplot,file=filename,/close
 
 ;make finder
-mk_stack,dir,stack,xtarg,ytarg
-set_plot,'x'
-loadct,0
-tvdl,stack,pc=99.75,z1,z2
-delta_x=max(xtarg)-min(xtarg)
-delta_y=max(ytarg)-min(ytarg)
-substack=stack[delta_x/2:n_elements(stack[*,0])-delta_x/2,delta_y/2:n_elements(stack[0,*])-delta_y/2]
+;mk_stack,dir,stack,xtarg,ytarg
+;set_plot,'x'
+;loadct,0
+;tvdl,stack,pc=99.75,z1,z2
+;set_plot,'ps'
+;delta_x=max(xtarg)-min(xtarg)
+;delta_y=max(ytarg)-min(ytarg)
+;substack=stack[delta_x/2:n_elements(stack[*,0])-delta_x/2,delta_y/2:n_elements(stack[0,*])-delta_y/2]
 filename=dir+'/finder.eps'
+
 mypsplot,file=filename,xsize=10,ysize=10
-TVLCT, r, g, b, /Get
-TVLCT, Reverse(r), Reverse(g), Reverse(b)
-side=4.91520
-xr=[-1.*(side/2),side/2]
-yr=xr
-plotimage,substack,range=[z1,z2],/iso,chars=0.7,xr=xr,yr=yr,imgxrange=xr,imgyrange=yr,col=255,tickinterval=0.5,xtitle='Arcminutes',ytitle='Arcminutes'
+;TVLCT, r, g, b, /Get
+;TVLCT, Reverse(r), Reverse(g), Reverse(b)
+;side=4.91520
+;xr=[-1.*(side/2),side/2]
+;yr=xr
+;plotimage,substack,range=[z1,z2],/iso,chars=0.45,xr=xr,yr=yr,imgxrange=xr,imgyrange=yr,col=255,tickinterval=0.5,xtitle='Arcminutes',ytitle='Arcminutes'
+;plotimage,substack,range=[z1,z2];,/iso,chars=0.45,xr=xr,yr=yr,imgxrange=xr,imgyrange=yr,col=255,tickinterval=0.5,xtitle='Arcminutes',ytitle='Arcminutes'
+plot,findgen(10),findgen(10)
+;xtarg2=xtarg*0.288/60.-side/2.
+;ytarg2=ytarg*0.288/60.-side/2.
 
-xtarg2=xtarg*0.288/60.-side/2.
-ytarg2=ytarg*0.288/60.-side/2.
+;xtarg_global=max(xtarg2)-delta_x*0.288/60./2.
+;ytarg_global=max(ytarg2)-delta_y*0.288/60./2.
 
-xtarg_global=max(xtarg2)-delta_x*0.288/60./2.
-ytarg_global=max(ytarg2)-delta_y*0.288/60./2.
+;dx=xtarg_global-xtarg2[1]
+;dy=ytarg_global-ytarg2[1]
 
-dx=xtarg_global-xtarg2[1]
-dy=ytarg_global-ytarg2[1]
+;xpos=(xypos[0,*,1]*0.288/60.-side/2.)+dx
+;ypos=(xypos[1,*,1]*0.288/60.-side/2.)+dy
 
-xpos=(xypos[0,*,1]*0.288/60.-side/2.)+dx
-ypos=(xypos[1,*,1]*0.288/60.-side/2.)+dy
-
-tmp=trim(indgen(n_elements(xpos)))
-xyouts,xpos-0.1,ypos+0.1,tmp,chars=0.7,col=255
-plotsym,0,1.2
-load8colors
-oplot,[xpos[0]],[ypos[0]],psym=8,col=3
+;tmp=trim(indgen(n_elements(xpos)))
+;xyouts,xpos-0.1,ypos+0.1,tmp,chars=0.45,col=255
+;plotsym,0,1.2
+;oplot,[xpos[0]],[ypos[0]],psym=8,col=3
+stop
 mypsplot,file=filename,/close
 stop
 
